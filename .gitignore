@@ -1,0 +1,69 @@
+# --- Go ---
+/bin/
+/cmd/**/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go modules local
+go.work
+go.work.sum
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# --- System ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Env ---
+.env
+.env.*
+!.env.example
+
+# --- Docker ---
+/docker-data/
+/docker/volumes/
+/tmp/
+
+# --- RAG / Embeddings / Indexes ---
+/rag_data/
+/qdrant_data/
+/vector_store/
+/indexes/
+
+# --- MinIO local storage ---
+/minio_data/
+/storage/
+
+# --- Ollama ---
+/ollama/models/
+/ollama_data/
+
+# --- Node / Frontend ---
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.next/
+out/
+dist/
+
+# --- Build artifacts ---
+*.cache
+*.tmp
+
+# --- Uploaded user files (if kept locally for dev) ---
+/uploads/
+/user_docs/
