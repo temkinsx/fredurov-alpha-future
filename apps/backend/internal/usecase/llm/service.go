@@ -1,10 +1,10 @@
-package chat
+package llm
 
 import (
 	"alpha_future_fredurov/apps/backend/internal/domain"
 	"context"
 	"errors"
-	"time"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -13,9 +13,10 @@ type Service struct {
 	chatRepo domain.ChatRepo
 	msgRepo  domain.MessageRepo
 	llm      domain.LLM
+	limits   domain.Limits
 }
 
-func NewChatService(chatRepo domain.ChatRepo, msgRepo domain.MessageRepo, llm domain.LLM) (*Service, error) {
+func NewChatService(chatRepo domain.ChatRepo, msgRepo domain.MessageRepo, llm domain.LLM, limits *domain.Limits) (*Service, error) {
 	if chatRepo == nil {
 		return nil, errors.New("chat repo should be provided")
 	}
@@ -28,33 +29,38 @@ func NewChatService(chatRepo domain.ChatRepo, msgRepo domain.MessageRepo, llm do
 		return nil, errors.New("LLM should be provided")
 	}
 
+	if limits == nil {
+		return nil, errors.New("limits should be provided")
+	}
+
 	return &Service{
 		chatRepo: chatRepo,
 		msgRepo:  msgRepo,
 		llm:      llm,
+		limits:   *limits,
 	}, nil
 }
 
-func (s *Service) Create(ctx context.Context, userID uuid.UUID, title *string) (*domain.Chat, error) {
-	chat := &domain.Chat{
-		ID:        uuid.New(),
-		Title:     title,
-		UserID:    userID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if err := s.chatRepo.Create(ctx, chat); err != nil {
+func (s *Service) Reply(ctx context.Context, chatID uuid.UUID, userID uuid.UUID, userText string, documentIDs []uuid.UUID, scenarioCode *string) (*domain.Message, error) {
+	chat, err := s.chatRepo.Get(ctx, chatID)
+	if err != nil {
 		return nil, err
 	}
 
-	return chat, nil
-}
+	if chat.UserID != userID {
+		return nil, errors.New("wrong userID for this chat")
+	}
 
-func (s *Service) ListAll(ctx context.Context, userID uuid.UUID) ([]*domain.Chat, error) {
-	return s.chatRepo.ListByUser(ctx, userID)
-}
+	rawMsgHistory, err := s.msgRepo.GetLastN(ctx, chatID, 10)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *Service) ListMessages(ctx context.Context, chatID uuid.UUID) ([]*domain.Message, error) {
+	var msgHistory strings.Builder
+	for _, msg := range rawMsgHistory {
+		msgHistory.WriteString(msg.String())
+		msgHistory.WriteString("\n")
+	}
 
+	return nil, nil
 }
