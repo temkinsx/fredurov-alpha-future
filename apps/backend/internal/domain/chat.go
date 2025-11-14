@@ -6,15 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Role string
-
-const (
-	RoleSystem    Role = "system"
-	RoleUser      Role = "user"
-	RoleAssistant Role = "assistant"
-	RoleTool      Role = "tool"
-)
-
 type ChatStatus string
 
 const (
@@ -24,10 +15,9 @@ const (
 
 type Chat struct {
 	ID       uuid.UUID         `json:"id"`
-	Tenant   string            `json:"tenant"`
 	Title    *string           `json:"title,omitempty"`
-	UserID   *string           `json:"user_id,omitempty"`
-	Model    *string           `json:"model,omitempty"` // модель по умолчанию
+	UserID   uuid.UUID         `json:"user_id,omitempty"`
+	Model    *string           `json:"model,omitempty"` // log
 	Summary  *string           `json:"summary,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 	Status   ChatStatus        `json:"status"`

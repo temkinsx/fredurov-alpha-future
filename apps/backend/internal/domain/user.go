@@ -12,5 +12,4 @@ type User struct {
 	Name  string
 
 	CreatedAt time.Time
-	Status    string
 }
