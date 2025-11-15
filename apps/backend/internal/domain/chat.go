@@ -15,7 +15,7 @@ const (
 
 type Chat struct {
 	ID       uuid.UUID         `json:"id"`
-	Title    *string           `json:"title,omitempty"`
+	Title    string            `json:"title,omitempty"`
 	UserID   uuid.UUID         `json:"user_id,omitempty"`
 	Model    *string           `json:"model,omitempty"` // log
 	Summary  *string           `json:"summary,omitempty"`

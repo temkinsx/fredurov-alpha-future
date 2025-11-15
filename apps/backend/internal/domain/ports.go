@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -10,11 +11,13 @@ type ChatRepo interface {
 	// Create - сохранить новый чат в БД
 	Create(ctx context.Context, chat *Chat) error
 	// Get - получить чат по ID
-	Get(ctx context.Context, chatID uuid.UUID) (*Chat, error)
+	GetByID(ctx context.Context, chatID uuid.UUID) (*Chat, error)
 	// ListByUser - получить все чаты пользователя по его ID
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]*Chat, error)
 	// Update - Обновить существующий чат
-	Update(ctx context.Context, chat *Chat) error
+	UpdateTitle(ctx context.Context, chat *Chat) error
+	//Touch - обновление времени последнего сообщения в чате (last_message_at)
+	Touch(ctx context.Context, chatID uuid.UUID, t time.Time) error
 	// Delete - удалить чат из БД по ID
 	Delete(ctx context.Context, chatID uuid.UUID) error
 }
@@ -31,7 +34,15 @@ type MessageRepo interface {
 	ListByChat(ctx context.Context, chatID uuid.UUID, limit, offset int) ([]*Message, error)
 }
 
+type DocumentRepo interface {
+	Create(ctx context.Context, doc *Document) error
+	GetByID(ctx context.Context, docID uuid.UUID) (*Document, error)
+	Update(ctx context.Context, doc *Document) (*Document, error)
+	Delete(ctx context.Context, docID uuid.UUID) error
+}
+
 type LLM interface {
 	// Generate - отправить запрос к LLM. Возвращает ответ в виде string
+	// Для хендлеров стоит в main.go создать новый сервис ser
 	Generate(ctx context.Context, prompt []byte) (string, error)
 }
