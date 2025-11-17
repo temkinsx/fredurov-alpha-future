@@ -100,7 +100,7 @@ func (c *ChatRepo) Touch(ctx context.Context, chatID uuid.UUID, t time.Time) err
 	return err
 }
 
-// TODO: транзакция (удаление чата из app.chats и удаление сообщений с id этого чата  до 17.11.2025
+// TODO: транзакция (удаление чата из app.chats и удаление сообщений с id этого чата) до 17.11.2025
 func (c *ChatRepo) Delete(ctx context.Context, chatID uuid.UUID) error {
 	const q = `
 	DELETE 
