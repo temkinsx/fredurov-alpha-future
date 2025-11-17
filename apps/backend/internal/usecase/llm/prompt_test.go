@@ -1,7 +1,7 @@
 package llm
 
 import (
-	"apps/backend/internal/domain"
+	"backend/internal/domain"
 	"strings"
 	"testing"
 )

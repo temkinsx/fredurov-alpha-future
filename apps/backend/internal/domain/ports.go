@@ -39,3 +39,10 @@ type LLM interface {
 	// Для хендлеров стоит в main.go создать новый сервис
 	Generate(ctx context.Context, prompt []byte) (string, error)
 }
+
+type UserRepo interface {
+	// GetByEmail - получить пользователя по email
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	// UpdateLastLogin - обновить время последнего входа
+	UpdateLastLogin(ctx context.Context, userID uuid.UUID) error
+}

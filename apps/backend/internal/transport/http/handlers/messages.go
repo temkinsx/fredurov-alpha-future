@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"alpha_future_fredurov/apps/backend/internal/domain"
-	"alpha_future_fredurov/apps/backend/internal/transport/http/dto"
-	"alpha_future_fredurov/apps/backend/internal/usecase/llm"
+	"backend/internal/domain"
+	"backend/internal/transport/http/dto"
+	"backend/internal/usecase/llm"
 	"encoding/json"
 	"net/http"
 	"strings"
