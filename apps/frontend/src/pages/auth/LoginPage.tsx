@@ -12,7 +12,7 @@ const LoginPage = () => {
   const signIn = useSignIn();
   const navigate = useNavigate();
 
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [_, setUserInfo] = useState<UserInfo | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -74,7 +74,17 @@ const LoginPage = () => {
             ].map((item, i) => (
               <div
                 key={i}
-                className="border-t border-t-gray-100 shadow-sm shadow-[#a9ff00] rounded-xl p-4 bg-white h-auto flex flex-row gap-5 items-center"
+                className={`
+                  border-t border-t-gray-100 rounded-xl p-4 bg-white h-auto
+                  flex flex-row gap-5 items-center shadow-md
+                  ${
+                    i === 1
+                      ? "shadow-[#9933ff3c]"
+                      : i === 2
+                      ? "shadow-[#ef31243c]" 
+                      : "shadow-[#a9ff003c]"
+                  }
+                `}
               >
                 <div className="flex items-center justify-center w-12 h-12">
                   <item.icon className="w-6 h-6 text-red-500" />
