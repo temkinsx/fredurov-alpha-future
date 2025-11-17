@@ -13,19 +13,19 @@ import (
 )
 
 type Config struct {
-	BaseURL       string
-	Model         string
-	Temperature   float32
-	TopP          float32
-	MaxTokens     int
-	Timeout       time.Duration
-	EnableWebSearch bool // Включает автоматический веб-поиск
+	BaseURL         string
+	Model           string
+	Temperature     float32
+	TopP            float32
+	MaxTokens       int
+	Timeout         time.Duration
+	EnableWebSearch bool
 }
 
 type OllamaClient struct {
 	client    *http.Client
 	config    Config
-	webSearch *WebSearch // Модуль для веб-поиска
+	webSearch *WebSearch
 }
 
 func NewOllamaClient(client *http.Client, config Config) *OllamaClient {
@@ -34,7 +34,6 @@ func NewOllamaClient(client *http.Client, config Config) *OllamaClient {
 		config: config,
 	}
 
-	// Инициализируем веб-поиск если он включен
 	if config.EnableWebSearch {
 		oc.webSearch = NewWebSearch(client)
 	}
@@ -42,15 +41,12 @@ func NewOllamaClient(client *http.Client, config Config) *OllamaClient {
 	return oc
 }
 
-// Generate реализует интерфейс domain.LLM
 func (c *OllamaClient) Generate(ctx context.Context, prompt []byte) (string, error) {
 	promptStr := string(prompt)
 
-	// Если веб-поиск включен, проверяем нужен ли он
 	if c.config.EnableWebSearch && c.webSearch != nil && c.needsWebSearch(promptStr) {
 		webResults, err := c.performWebSearch(ctx, promptStr)
 		if err == nil && len(webResults) > 0 {
-			// Добавляем результаты веб-поиска в промпт
 			promptStr = c.enrichPromptWithWebSearch(promptStr, webResults)
 		}
 	}
@@ -100,11 +96,9 @@ func (c *OllamaClient) Generate(ctx context.Context, prompt []byte) (string, err
 	return response.Response, nil
 }
 
-// needsWebSearch определяет, нужен ли веб-поиск для данного промпта
 func (c *OllamaClient) needsWebSearch(prompt string) bool {
 	lowerPrompt := strings.ToLower(prompt)
-	
-	// Ключевые слова, указывающие на необходимость актуальной информации
+
 	searchKeywords := []string{
 		"текущий", "актуальный", "сегодня", "сейчас", "последний",
 		"новости", "события", "курс", "цена", "погода",
@@ -127,9 +121,7 @@ func (c *OllamaClient) needsWebSearch(prompt string) bool {
 	return false
 }
 
-// performWebSearch извлекает запрос из промпта и выполняет веб-поиск
 func (c *OllamaClient) performWebSearch(ctx context.Context, prompt string) ([]SearchResult, error) {
-	// Извлекаем основной запрос пользователя (последняя строка после "USER:")
 	parts := strings.Split(prompt, "USER:")
 	query := prompt
 	if len(parts) > 1 {
@@ -148,7 +140,6 @@ func (c *OllamaClient) performWebSearch(ctx context.Context, prompt string) ([]S
 	return c.webSearch.Search(ctx, query, 5)
 }
 
-// enrichPromptWithWebSearch добавляет результаты веб-поиска в промпт
 func (c *OllamaClient) enrichPromptWithWebSearch(prompt string, results []SearchResult) string {
 	var webInfo strings.Builder
 	webInfo.WriteString("\n\n[WEB_SEARCH_RESULTS]\n")
@@ -162,7 +153,6 @@ func (c *OllamaClient) enrichPromptWithWebSearch(prompt string, results []Search
 
 	webInfo.WriteString("Используйте эту информацию для ответа на вопрос пользователя. Если информация не найдена, используйте свои знания.\n")
 
-	// Вставляем результаты веб-поиска перед последним запросом пользователя
 	parts := strings.Split(prompt, "USER:")
 	if len(parts) > 1 {
 		prompt = parts[0] + webInfo.String() + "\nUSER:\n" + parts[len(parts)-1]
@@ -173,6 +163,4 @@ func (c *OllamaClient) enrichPromptWithWebSearch(prompt string, results []Search
 	return prompt
 }
 
-// Проверка, что OllamaClient реализует интерфейс domain.LLM
 var _ domain.LLM = (*OllamaClient)(nil)
-
