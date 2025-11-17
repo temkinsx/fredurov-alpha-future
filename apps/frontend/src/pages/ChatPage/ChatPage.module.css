@@ -1,0 +1,6 @@
+.pageContainer {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 20% 1fr;
+    grid-template-rows: repeat(10, 1fr);
+}
