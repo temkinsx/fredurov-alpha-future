@@ -34,13 +34,6 @@ type MessageRepo interface {
 	ListByChat(ctx context.Context, chatID uuid.UUID, limit, offset int) ([]*Message, error)
 }
 
-type DocumentRepo interface {
-	Create(ctx context.Context, doc *Document) error
-	GetByID(ctx context.Context, docID uuid.UUID) (*Document, error)
-	Update(ctx context.Context, doc *Document) (*Document, error)
-	Delete(ctx context.Context, docID uuid.UUID) error
-}
-
 type LLM interface {
 	// Generate - отправить запрос к LLM. Возвращает ответ в виде string
 	// Для хендлеров стоит в main.go создать новый сервис ser

@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"apps/backend/internal/domain"
+	"backend/internal/domain"
 	"context"
 
 	"github.com/google/uuid"
