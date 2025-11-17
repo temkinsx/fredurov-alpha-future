@@ -36,6 +36,6 @@ type MessageRepo interface {
 
 type LLM interface {
 	// Generate - отправить запрос к LLM. Возвращает ответ в виде string
-	// Для хендлеров стоит в main.go создать новый сервис ser
+	// Для хендлеров стоит в main.go создать новый сервис
 	Generate(ctx context.Context, prompt []byte) (string, error)
 }

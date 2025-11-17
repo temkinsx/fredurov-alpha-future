@@ -3,9 +3,11 @@ package postgres
 import (
 	"backend/internal/domain"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -100,17 +102,40 @@ func (c *ChatRepo) Touch(ctx context.Context, chatID uuid.UUID, t time.Time) err
 	return err
 }
 
-// TODO: транзакция (удаление чата из app.chats и удаление сообщений с id этого чата) до 17.11.2025
+// Delete удаляет чат и все связанные с ним сообщения в одной транзакции.
 func (c *ChatRepo) Delete(ctx context.Context, chatID uuid.UUID) error {
-	const q = `
-	DELETE 
-	FROM app.chats
-	WHERE id = $1
+	tx, err := c.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	// Если где-то ошибка — откат
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	// 1. Удаляем сообщения чата
+	const deleteMsgs = `
+		DELETE FROM app.messages
+		WHERE chat_id = $1;
 	`
 
-	_, err := c.pool.Exec(ctx, q, chatID)
-	if err != nil {
-		return err
+	if _, err = tx.Exec(ctx, deleteMsgs, chatID); err != nil {
+		return fmt.Errorf("delete messages: %w", err)
+	}
+
+	const deleteChat = `
+		DELETE FROM app.chats
+		WHERE id = $1;
+	`
+
+	if _, err = tx.Exec(ctx, deleteChat, chatID); err != nil {
+		return fmt.Errorf("delete chat: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
 	}
 
 	return nil
