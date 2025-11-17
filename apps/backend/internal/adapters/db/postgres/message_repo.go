@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"alpha_future_fredurov/apps/backend/internal/domain"
+	"apps/backend/internal/domain"
 	"context"
 
 	"github.com/google/uuid"
@@ -28,14 +28,18 @@ func (m *MessageRepo) Append(ctx context.Context, msg *domain.Message) error {
 
 func (m *MessageRepo) GetLastN(ctx context.Context, chatID uuid.UUID, n int) ([]*domain.Message, error) {
 	const q = `
-	SELECT *
-	FROM app.messages
-	WHERE chat_id = $1
-	ORDER BY created_at DESC
-	LIMIT $2
+	SELECT id, chat_id, role, content, created_at
+	FROM (
+		SELECT id, chat_id, role, content, created_at
+		FROM app.messages
+		WHERE chat_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2
+	) AS latest
+	ORDER BY created_at ASC;
 	`
 
-	rows, err := m.pool.Query(ctx, q, chatID)
+	rows, err := m.pool.Query(ctx, q, chatID, n)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +49,7 @@ func (m *MessageRepo) GetLastN(ctx context.Context, chatID uuid.UUID, n int) ([]
 
 	for rows.Next() {
 		var msg domain.Message
-		err := rows.Scan(&msg.ID, msg.ChatID, &msg.Role, &msg.Content, msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.ChatID, &msg.Role, &msg.Content, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -62,8 +66,10 @@ func (m *MessageRepo) GetLastN(ctx context.Context, chatID uuid.UUID, n int) ([]
 
 func (m *MessageRepo) ListByChat(ctx context.Context, chatID uuid.UUID, limit, offset int) ([]*domain.Message, error) {
 	const q = `
-	SELECT * from app.messages
+	SELECT id, chat_id, role, content, created_at 
+	FROM app.messages
 	WHERE chat_id = $1
+	ORDER BY created_at ASC
 	LIMIT $2
 	OFFSET $3
 	`
@@ -77,7 +83,7 @@ func (m *MessageRepo) ListByChat(ctx context.Context, chatID uuid.UUID, limit, o
 	var messages []*domain.Message
 	for rows.Next() {
 		var msg domain.Message
-		err := rows.Scan(&msg.ID, msg.ChatID, &msg.Role, &msg.Content, msg.CreatedAt)
+		err := rows.Scan(&msg.ID, &msg.ChatID, &msg.Role, &msg.Content, &msg.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
