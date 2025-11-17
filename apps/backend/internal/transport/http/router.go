@@ -1,9 +1,9 @@
 package http
 
 import (
-	"alpha_future_fredurov/apps/backend/internal/domain"
-	"alpha_future_fredurov/apps/backend/internal/transport/http/handlers"
-	"alpha_future_fredurov/apps/backend/internal/usecase/llm"
+	"backend/internal/domain"
+	"backend/internal/transport/http/handlers"
+	"backend/internal/usecase/llm"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,6 +13,7 @@ type Router struct {
 	chatRepo      domain.ChatRepo
 	msgRepo       domain.MessageRepo
 	docRepo       domain.DocumentRepo
+	userRepo      domain.UserRepo
 	llmService    *llm.Service
 	docTextGetter llm.DocumentTextGetter
 	limits        domain.Limits
@@ -22,6 +23,7 @@ func NewRouter(
 	chatRepo domain.ChatRepo,
 	msgRepo domain.MessageRepo,
 	docRepo domain.DocumentRepo,
+	userRepo domain.UserRepo,
 	llmService *llm.Service,
 	docTextGetter llm.DocumentTextGetter,
 	limits domain.Limits,
@@ -30,6 +32,7 @@ func NewRouter(
 		chatRepo:      chatRepo,
 		msgRepo:       msgRepo,
 		docRepo:       docRepo,
+		userRepo:      userRepo,
 		llmService:    llmService,
 		docTextGetter: docTextGetter,
 		limits:        limits,
@@ -43,10 +46,10 @@ func (r *Router) SetupRoutes() *chi.Mux {
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.RequestID)
-	router.Use(handlers.AuthMiddleware)
 
 	// Handlers
 	healthHandler := handlers.NewHealthHandler()
+	authHandler := handlers.NewAuthHandler(r.userRepo)
 	chatsHandler := handlers.NewChatsHandler(r.chatRepo)
 	messagesHandler := handlers.NewMessagesHandler(r.msgRepo, r.chatRepo, r.llmService, r.docTextGetter)
 	documentsHandler := handlers.NewDocumentsHandler(r.docRepo, r.limits)
@@ -54,30 +57,36 @@ func (r *Router) SetupRoutes() *chi.Mux {
 	limitsHandler := handlers.NewLimitsHandler(r.limits)
 	ragHandler := handlers.NewRAGHandler()
 
-	// Routes
+	// Public routes (без аутентификации)
 	router.Get("/health", healthHandler.Health)
+	router.Post("/login", authHandler.Login)
 
-	// Chats
-	router.Get("/chats", chatsHandler.GetChats)
-	router.Post("/chats", chatsHandler.CreateChat)
+	// Protected routes (с аутентификацией)
+	router.Group(func(r chi.Router) {
+		r.Use(handlers.AuthMiddleware)
 
-	// Messages
-	router.Get("/chats/{chat_id}/messages", messagesHandler.GetMessages)
-	router.Post("/chats/{chat_id}/messages", messagesHandler.SendMessage)
+		// Chats
+		r.Get("/chats", chatsHandler.GetChats)
+		r.Post("/chats", chatsHandler.CreateChat)
 
-	// Documents
-	router.Post("/documents", documentsHandler.CreateDocument)
-	router.Get("/documents", documentsHandler.GetDocuments)
-	router.Get("/documents/{id}", documentsHandler.GetDocument)
+		// Messages
+		r.Get("/chats/{chat_id}/messages", messagesHandler.GetMessages)
+		r.Post("/chats/{chat_id}/messages", messagesHandler.SendMessage)
 
-	// Scenarios
-	router.Get("/scenarios", scenariosHandler.GetScenarios)
+		// Documents
+		r.Post("/documents", documentsHandler.CreateDocument)
+		r.Get("/documents", documentsHandler.GetDocuments)
+		r.Get("/documents/{id}", documentsHandler.GetDocument)
 
-	// Config
-	router.Get("/config/limits", limitsHandler.GetLimits)
+		// Scenarios
+		r.Get("/scenarios", scenariosHandler.GetScenarios)
 
-	// RAG (опциональный)
-	router.Post("/rag/search", ragHandler.Search)
+		// Config
+		r.Get("/config/limits", limitsHandler.GetLimits)
+
+		// RAG (опциональный)
+		r.Post("/rag/search", ragHandler.Search)
+	})
 
 	return router
 }

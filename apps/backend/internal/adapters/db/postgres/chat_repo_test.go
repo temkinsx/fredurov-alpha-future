@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"alpha_future_fredurov/apps/backend/internal/domain"
+	"backend/internal/domain"
 	"context"
 	"testing"
 	"time"
