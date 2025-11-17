@@ -1,7 +1,7 @@
 package llm
 
 import (
-	"alpha_future_fredurov/apps/backend/internal/domain"
+	"backend/internal/domain"
 	"errors"
 	"testing"
 )

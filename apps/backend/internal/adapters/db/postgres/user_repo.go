@@ -3,72 +3,58 @@ package postgres
 import (
 	"backend/internal/domain"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type UserRepo struct {
-	pool *pgxpool.Pool
-}
 
 func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{pool: pool}
 }
 
-func (r *UserRepo) Create(ctx context.Context, u *domain.User) error {
-	const q = `
-INSERT INTO app.users (id, email, created_at)
-VALUES ($1, $2, now())
-RETURNING created_at;
-`
-	return r.pool.QueryRow(ctx, q,
-		u.ID,
-		u.Email,
-	).Scan(&u.CreatedAt)
+type UserRepo struct {
+	pool *pgxpool.Pool
 }
 
-func (r *UserRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (u *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	const q = `
-SELECT id, email, created_at
-FROM app.users
-WHERE id = $1;
-`
-	var u domain.User
-	err := r.pool.QueryRow(ctx, q, id).Scan(
-		&u.ID,
-		&u.Email,
-		&u.CreatedAt,
+		SELECT id, email, password_hash, is_active, created_at, last_login_at
+		FROM auth.users
+		WHERE email = $1;
+	`
+
+	var user domain.User
+	var lastLoginAt *time.Time
+
+	err := u.pool.QueryRow(ctx, q, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.IsActive,
+		&user.CreatedAt,
+		&lastLoginAt,
 	)
+
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return &u, nil
+
+	user.LastLoginAt = lastLoginAt
+	return &user, nil
 }
 
-func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (u *UserRepo) UpdateLastLogin(ctx context.Context, userID uuid.UUID) error {
 	const q = `
-SELECT id, email, created_at
-FROM app.users
-WHERE email = $1;
-`
-	var u domain.User
-	err := r.pool.QueryRow(ctx, q, email).Scan(
-		&u.ID,
-		&u.Email,
-		&u.CreatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
-}
+		UPDATE auth.users
+		SET last_login_at = now()
+		WHERE id = $1;
+	`
 
-func (r *UserRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	const q = `
-DELETE FROM app.users
-WHERE id = $1;
-`
-	_, err := r.pool.Exec(ctx, q, id)
+	_, err := u.pool.Exec(ctx, q, userID)
 	return err
 }
