@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"alpha_future_fredurov/internal/transport/http/handlers"
+	"backend/internal/transport/http/handlers"
 )
 
 func main() {

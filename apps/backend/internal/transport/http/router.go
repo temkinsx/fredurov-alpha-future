@@ -12,7 +12,6 @@ import (
 type Router struct {
 	chatRepo      domain.ChatRepo
 	msgRepo       domain.MessageRepo
-	docRepo       domain.DocumentRepo
 	userRepo      domain.UserRepo
 	llmService    *llm.Service
 	docTextGetter llm.DocumentTextGetter
@@ -22,7 +21,6 @@ type Router struct {
 func NewRouter(
 	chatRepo domain.ChatRepo,
 	msgRepo domain.MessageRepo,
-	docRepo domain.DocumentRepo,
 	userRepo domain.UserRepo,
 	llmService *llm.Service,
 	docTextGetter llm.DocumentTextGetter,
@@ -31,7 +29,6 @@ func NewRouter(
 	return &Router{
 		chatRepo:      chatRepo,
 		msgRepo:       msgRepo,
-		docRepo:       docRepo,
 		userRepo:      userRepo,
 		llmService:    llmService,
 		docTextGetter: docTextGetter,
@@ -52,10 +49,8 @@ func (r *Router) SetupRoutes() *chi.Mux {
 	authHandler := handlers.NewAuthHandler(r.userRepo)
 	chatsHandler := handlers.NewChatsHandler(r.chatRepo)
 	messagesHandler := handlers.NewMessagesHandler(r.msgRepo, r.chatRepo, r.llmService, r.docTextGetter)
-	documentsHandler := handlers.NewDocumentsHandler(r.docRepo, r.limits)
 	scenariosHandler := handlers.NewScenariosHandler()
 	limitsHandler := handlers.NewLimitsHandler(r.limits)
-	ragHandler := handlers.NewRAGHandler()
 
 	// Public routes (без аутентификации)
 	router.Get("/health", healthHandler.Health)
@@ -73,19 +68,11 @@ func (r *Router) SetupRoutes() *chi.Mux {
 		r.Get("/chats/{chat_id}/messages", messagesHandler.GetMessages)
 		r.Post("/chats/{chat_id}/messages", messagesHandler.SendMessage)
 
-		// Documents
-		r.Post("/documents", documentsHandler.CreateDocument)
-		r.Get("/documents", documentsHandler.GetDocuments)
-		r.Get("/documents/{id}", documentsHandler.GetDocument)
-
 		// Scenarios
 		r.Get("/scenarios", scenariosHandler.GetScenarios)
 
 		// Config
 		r.Get("/config/limits", limitsHandler.GetLimits)
-
-		// RAG (опциональный)
-		r.Post("/rag/search", ragHandler.Search)
 	})
 
 	return router
